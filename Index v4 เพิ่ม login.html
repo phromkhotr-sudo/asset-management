@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ระบบทะเบียนคุมทรัพย์สิน - กุดดินจี่พิทยาคม</title>
+  
+  <!-- Bootstrap 5 & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- ไลบรารีสร้าง QR Code (QRious) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+  <!-- Google Fonts: Prompt -->
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    body { font-family: 'Prompt', sans-serif; background-color: #f4f7f6; color: #333; }
+    
+    /* เลย์เอาต์หลักแบบ Sidebar */
+    .app-container { display: flex; min-height: 100vh; }
+    
+    /* ตั้งค่า Sidebar */
+    .sidebar { width: 260px; background-color: #ffffff; box-shadow: 2px 0 15px rgba(0,0,0,0.03); z-index: 1000; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; }
+    .sidebar-brand { padding: 1.5rem; text-align: center; border-bottom: 1px solid #f0f0f0; }
+    .sidebar-brand i { font-size: 2rem; color: #0d6efd; }
+    .sidebar-brand h5 { font-weight: 700; margin-top: 10px; color: #2c3e50; }
+    
+    /* เมนู Sidebar */
+    .sidebar-nav { flex-grow: 1; padding: 1rem; overflow-y: auto; }
+    .nav-pills .nav-link { color: #555; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 0.25rem; font-weight: 500; transition: all 0.2s ease; cursor: pointer; }
+    .nav-pills .nav-link i { margin-right: 10px; font-size: 1.1rem; }
+    .nav-pills .nav-link:hover:not(.active):not(.disabled) { background-color: #f8f9fa; color: #0d6efd; }
+    .nav-pills .nav-link.active { background-color: #eff6ff; color: #0d6efd; font-weight: 600; border-left: 4px solid #0d6efd; }
+    
+    /* เครดิตผู้พัฒนา */
+    .sidebar-footer { padding: 1.5rem 1rem; border-top: 1px solid #f0f0f0; text-align: center; background-color: #fafbfc; }
+    .sidebar-footer .credit-name { font-weight: 600; color: #0d6efd; }
+    .sidebar-footer .credit-link { font-size: 0.85rem; color: #6c757d; text-decoration: none; }
+    .sidebar-footer .credit-link:hover { color: #0d6efd; }
+
+    /* พื้นที่เนื้อหาหลัก */
+    .main-content { flex-grow: 1; padding: 2rem 2.5rem; max-width: calc(100vw - 260px); }
+    
+    /* ตกแต่ง Card */
+    .card { border-radius: 12px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.04); margin-bottom: 1.5rem; }
+    .card-header { background-color: transparent; border-bottom: 1px solid #f0f0f0; padding: 1.25rem 1.5rem; }
+    
+    /* ตกแต่ง Card สรุปยอด */
+    .summary-card { border-radius: 12px; border: none; border-left: 5px solid; transition: transform 0.2s; }
+    .summary-card:hover { transform: translateY(-3px); }
+    .card-total { border-color: #0d6efd; background-color: #ffffff; }
+    .card-value { border-color: #198754; background-color: #ffffff; }
+    .card-net { border-color: #ffc107; background-color: #ffffff; }
+    .summary-card h6 { font-size: 0.9rem; font-weight: 500; }
+    .summary-card h3 { font-weight: 700; letter-spacing: -0.5px; }
+
+    /* ปรับแต่งตาราง */
+    .table > :not(caption) > * > * { padding: 0.75rem 1rem; }
+    .table thead th { font-weight: 500; color: #fff; background-color: #2c3e50; border-bottom: none; }
+    .table tbody tr:hover { background-color: #f8f9fa; }
+
+    /* ปรับปรุงแบบฟอร์ม */
+    .form-label { font-weight: 500; color: #495057; font-size: 0.95rem; }
+    .form-control, .form-select { border-radius: 8px; border: 1px solid #dee2e6; padding: 0.6rem 1rem; }
+    .section-title { font-size: 1.1rem; font-weight: 600; color: #0d6efd; border-bottom: 2px dashed #e9ecef; padding-bottom: 0.5rem; margin-top: 1.5rem; margin-bottom: 1rem; }
+    
+    /* รองรับจอเล็ก */
+    @media (max-width: 991px) {
+      .app-container { flex-direction: column; }
+      .sidebar { width: 100%; height: auto; position: relative; box-shadow: none; border-bottom: 1px solid #dee2e6; }
+      .main-content { max-width: 100%; padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- ============================================== -->
+    <!-- 🟢 แถบเมนูด้านข้าง (Sidebar Menu) -->
+    <!-- ============================================== -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <i class="bi bi-boxes"></i>
+        <h5>กุดดินจี่พิทยาคม</h5>
+        <span class="badge bg-primary rounded-pill fw-normal mt-1">ระบบพัสดุ V.2</span>
+      </div>
+      
+      <div class="sidebar-nav">
+        <!-- เมนูหลัก -->
+        <small class="text-muted fw-bold px-2 d-block mb-2" style="font-size: 0.75rem;">เมนูหลัก</small>
+        <ul class="nav nav-pills flex-column mb-auto" id="mainMenu" role="tablist">
+          <li class="nav-item" role="presentation">
+            <a class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard-pane" type="button" role="tab" onclick="loadDashboard()">
+              <i class="bi bi-bar-chart-fill me-2"></i> ทะเบียนคุม/ค่าเสื่อม
+            </a>
+          </li>
+          <li class="nav-item" role="presentation" id="menuAddAssetLi">
+            <a class="nav-link" id="form-tab" data-bs-toggle="tab" data-bs-target="#form-pane" type="button" role="tab">
+              <i class="bi bi-pencil-square me-2"></i> บันทึกรับเข้าพัสดุ
+            </a>
+          </li>
+        </ul>
+        
+        <hr class="my-3 border-secondary opacity-25">
+        
+        <!-- เมนูส่วนต่อขยาย (แสดงเฉพาะ Admin) -->
+        <div id="extensionHeader" class="px-3 mt-4 mb-2 text-muted fw-bold" style="font-size: 0.75rem;">เมนูส่วนต่อขยาย</div>
+        <ul class="nav flex-column nav-pills" id="extensionTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <a class="nav-link text-secondary" id="qrcode-tab" data-bs-toggle="tab" data-bs-target="#qrcode-pane" type="button" role="tab">
+              <i class="bi bi-qr-code-scan me-2"></i>พิมพ์ QR Code
+            </a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link text-secondary" id="dispose-tab" data-bs-toggle="tab" data-bs-target="#dispose-pane" type="button" role="tab">
+              <i class="bi bi-arrow-left-right me-2"></i>แทงจำหน่าย/ส่งซ่อม
+            </a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link text-secondary" id="report-tab" data-bs-toggle="tab" data-bs-target="#report-pane" type="button" role="tab">
+              <i class="bi bi-file-earmark-text me-2"></i>รายงานประจำปี
+            </a>
+          </li>
+          <li class="nav-item mt-2" role="presentation" id="settingsMenuLi">
+            <a class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings-pane" type="button" role="tab" onclick="loadSettings()">
+              <i class="bi bi-gear me-2"></i> ตั้งค่าระบบ
+            </a>
+          </li>
+        </ul>
+      </div>
+      
+      <!-- เครดิตและปุ่ม Login -->
+      <div class="sidebar-footer">
+        <div class="px-3 mt-auto mb-3">
+          <button id="btnLoginBtn" class="btn btn-sm btn-outline-primary w-100 fw-bold" onclick="toggleLogin()">
+            <i class="bi bi-lock-fill me-1"></i>เข้าสู่ระบบผู้ดูแล
+          </button>
+        </div>
+        <div style="font-size: 0.8rem; color: #6c757d; margin-bottom: 2px;">ผู้พัฒนาระบบ</div>
+        <div class="credit-name mb-1">ครูบอล (พงศ์พิพัฒน์)</div>
+        <a href="https://www.ballit.in.th" target="_blank" class="credit-link"><i class="bi bi-globe me-1"></i>www.ballit.in.th</a>
+      </div>
+    </aside>
+
+    <!-- ============================================== -->
+    <!-- 🔵 พื้นที่เนื้อหาหลัก (Main Content) -->
+    <!-- ============================================== -->
+    <main class="main-content">
+      <div class="tab-content" id="myTabContent">
+        
+        <!-- 📝 TAB: ฟอร์มบันทึกข้อมูล -->
+        <div class="tab-pane fade" id="form-pane" role="tabpanel">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold mb-0 text-dark"><i class="bi bi-pencil-square text-primary me-2"></i>บันทึกรับเข้าพัสดุ</h4>
+          </div>
+          
+          <div class="card">
+            <div class="card-body p-4">
+              <form id="assetForm" onsubmit="handleFormSubmit(event)">
+                <input type="hidden" name="sysId" value="">
+                
+                <div class="section-title">1. ข้อมูลเอกสารและการจัดหา</div>
+                <div class="row mb-3">
+                  <div class="col-md-3"><label class="form-label">ปีงบประมาณ</label><input type="number" class="form-control" name="fiscalYear" required></div>
+                  <div class="col-md-3"><label class="form-label">วันที่ตรวจรับ</label><input type="date" class="form-control" name="acquireDate" required></div>
+                  <div class="col-md-3"><label class="form-label">ประเภทเงิน</label>
+                    <select class="form-select" name="moneyType">
+                      <option value="เงินงบประมาณ">เงินงบประมาณ</option>
+                      <option value="เงินนอกงบประมาณ">เงินนอกงบประมาณ</option>
+                      <option value="เงินบริจาค/เงินช่วยเหลือ">เงินบริจาค/เงินช่วยเหลือ</option>
+                      <option value="อื่นๆ">อื่นๆ</option>
+                    </select>
+                  </div>
+                  <div class="col-md-3"><label class="form-label">วิธีการได้มา</label>
+                    <select class="form-select" name="method">
+                      <option value="ตกลงราคา">ตกลงราคา</option>
+                      <option value="สอบราคา">สอบราคา</option>
+                      <option value="ประกวดราคา">ประกวดราคา</option>
+                      <option value="วิธีพิเศษ">วิธีพิเศษ</option>
+                      <option value="วิธีกรณีพิเศษ">วิธีกรณีพิเศษ</option>
+                      <option value="รับบริจาค">รับบริจาค</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="section-title">2. รายละเอียดทรัพย์สิน</div>
+                <div class="row mb-3">
+                  <div class="col-md-6"><label class="form-label">รายการ (ลักษณะ/คุณสมบัติ)</label><input type="text" class="form-control" name="itemName" required></div>
+                  <div class="col-md-3"><label class="form-label">รหัสพัสดุ</label><input type="text" class="form-control" name="assetCode" placeholder="เว้นว่างได้ถ้ารอระบบรันให้"></div>
+                  <div class="col-md-3"><label class="form-label">รุ่น/แบบ</label><input type="text" class="form-control" name="model"></div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-md-4">
+                    <label class="form-label">หมวดหมู่ (19 ประเภท)</label>
+                    <select class="form-select" name="category" required>
+                      <option value="auto">🤖 วิเคราะห์อัตโนมัติจากชื่อ</option>
+                      <option value="อาคารถาวร">1. อาคารถาวร</option>
+                      <option value="อาคารชั่วคราว / โรงเรือน">2. อาคารชั่วคราว / โรงเรือน</option>
+                      <option value="สิ่งก่อสร้าง">3. สิ่งก่อสร้าง</option>
+                      <option value="ครุภัณฑ์สำนักงาน">4. ครุภัณฑ์สำนักงาน</option>
+                      <option value="ครุภัณฑ์ยานพาหนะและขนส่ง">5. ครุภัณฑ์ยานพาหนะและขนส่ง</option>
+                      <option value="ครุภัณฑ์ไฟฟ้าและวิทยุ">6. ครุภัณฑ์ไฟฟ้าและวิทยุ</option>
+                      <option value="ครุภัณฑ์โฆษณาและเผยแพร่">7. ครุภัณฑ์โฆษณาและเผยแพร่</option>
+                      <option value="ครุภัณฑ์การเกษตร">8. ครุภัณฑ์การเกษตร</option>
+                      <option value="ครุภัณฑ์โรงงาน">9. ครุภัณฑ์โรงงาน</option>
+                      <option value="ครุภัณฑ์ก่อสร้าง">10. ครุภัณฑ์ก่อสร้าง</option>
+                      <option value="ครุภัณฑ์สำรวจ">11. ครุภัณฑ์สำรวจ</option>
+                      <option value="ครุภัณฑ์วิทยาศาสตร์และการแพทย์">12. ครุภัณฑ์วิทยาศาสตร์และการแพทย์</option>
+                      <option value="ครุภัณฑ์คอมพิวเตอร์">13. ครุภัณฑ์คอมพิวเตอร์</option>
+                      <option value="ครุภัณฑ์ดนตรี">14. ครุภัณฑ์ดนตรี</option>
+                      <option value="ครุภัณฑ์การศึกษา">15. ครุภัณฑ์การศึกษา</option>
+                      <option value="ครุภัณฑ์งานบ้านงานครัว">16. ครุภัณฑ์งานบ้านงานครัว</option>
+                      <option value="ครุภัณฑ์กีฬา">17. ครุภัณฑ์กีฬา</option>
+                      <option value="ครุภัณฑ์อาวุธ">18. ครุภัณฑ์อาวุธ</option>
+                      <option value="ครุภัณฑ์สนาม">19. ครุภัณฑ์สนาม</option>
+                    </select>
+                  </div>
+                  <div class="col-md-3"><label class="form-label">ราคาต่อหน่วย</label><input type="number" step="0.01" class="form-control" name="price" required></div>
+                  <div class="col-md-2"><label class="form-label">จำนวน</label><input type="number" class="form-control" name="quantity" required></div>
+                  <div class="col-md-3"><label class="form-label">หน่วยนับ</label><input type="text" class="form-control" name="unit" required></div>
+                </div>
+
+                <div class="section-title">3. ข้อมูลผู้ขายและสถานที่ตั้ง</div>
+                <div class="row mb-3">
+                  <div class="col-md-4"><label class="form-label">ชื่อผู้ขาย/ผู้บริจาค</label><input type="text" class="form-control" name="vendor"></div>
+                  <div class="col-md-5"><label class="form-label">ที่อยู่ผู้ขาย</label><input type="text" class="form-control" name="address"></div>
+                  <div class="col-md-3"><label class="form-label">โทรศัพท์</label><input type="text" class="form-control" name="phone"></div>
+                </div>
+                <div class="row mb-4">
+                  <div class="col-md-4"><label class="form-label">เลขที่เอกสาร</label><input type="text" class="form-control" name="docRef"></div>
+                  <div class="col-md-4"><label class="form-label">สถานที่ตั้ง/ผู้รับผิดชอบ</label><input type="text" class="form-control" name="location"></div>
+                  <div class="col-md-4"><label class="form-label">หมายเหตุ</label><input type="text" class="form-control" name="remark"></div>
+                </div>
+
+                <div class="p-3 bg-light border rounded mb-4">
+                  <label for="assetImage" class="form-label fw-bold"><i class="bi bi-camera me-2"></i>แนบรูปถ่ายพัสดุ (ถ้ามี)</label>
+                  <input class="form-control" type="file" id="assetImage" name="assetImage" accept="image/*">
+                  <div class="form-text text-muted">รองรับไฟล์ .jpg, .png (ขนาดไม่ควรเกิน 2MB)</div>
+                </div>
+
+                <div class="d-grid gap-2">
+                  <button type="submit" class="btn btn-primary btn-lg fw-bold" id="submitBtn"><i class="bi bi-save me-2"></i>บันทึกทะเบียนคุมทรัพย์สิน</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- 📊 TAB: Dashboard ทะเบียนคุม -->
+        <div class="tab-pane fade show active" id="dashboard-pane" role="tabpanel">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold mb-0 text-dark"><i class="bi bi-bar-chart-fill text-primary me-2"></i>ทะเบียนคุมทรัพย์สินและค่าเสื่อมราคา</h4>
+            <div>
+              <button class="btn btn-outline-secondary btn-sm me-2" onclick="loadDashboard()"><i class="bi bi-arrow-clockwise me-1"></i>รีเฟรชข้อมูล</button>
+              <button class="btn btn-primary btn-sm shadow-sm" id="btnAddAsset" onclick="openAddForm()"><i class="bi bi-plus-circle me-1"></i>เพิ่มรายการใหม่</button>
+            </div>
+          </div>
+          
+          <!-- Summary Cards -->
+          <div class="row mb-4">
+            <div class="col-md-4 mb-3 mb-md-0">
+              <div class="card summary-card card-total h-100 mb-0 shadow-sm">
+                <div class="card-body">
+                  <h6 class="text-muted mb-2"><i class="bi bi-boxes me-2"></i>จำนวนพัสดุรวม</h6>
+                  <h3 class="text-primary mb-0" id="sumCount">0 <small class="fs-6 text-muted fw-normal">รายการ</small></h3>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4 mb-3 mb-md-0">
+              <div class="card summary-card card-value h-100 mb-0 shadow-sm">
+                <div class="card-body">
+                  <h6 class="text-muted mb-2"><i class="bi bi-cash-coin me-2"></i>มูลค่าทุนรวม</h6>
+                  <h3 class="text-success mb-0" id="sumTotal">0.00 <small class="fs-6 text-muted fw-normal">บาท</small></h3>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card summary-card card-net h-100 mb-0 shadow-sm">
+                <div class="card-body">
+                  <h6 class="text-muted mb-2"><i class="bi bi-calculator me-2"></i>มูลค่าสุทธิปัจจุบัน</h6>
+                  <h3 class="text-warning mb-0" id="sumNet">0.00 <small class="fs-6 text-muted fw-normal">บาท</small></h3>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- เครื่องมือกรอง -->
+          <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+              <div class="row align-items-end">
+                <div class="col-md-3 mb-3 mb-md-0">
+                  <label class="form-label fw-bold mb-1"><i class="bi bi-funnel me-1"></i>หมวดหมู่พัสดุ</label>
+                  <select class="form-select bg-light" id="categoryFilter" onchange="filterData()">
+                    <option value="all">ดูทั้งหมดทุกประเภท</option>
+                    <option value="อาคารถาวร">1. อาคารถาวร</option>
+                    <option value="อาคารชั่วคราว / โรงเรือน">2. อาคารชั่วคราว / โรงเรือน</option>
+                    <option value="สิ่งก่อสร้าง">3. สิ่งก่อสร้าง</option>
+                    <option value="ครุภัณฑ์สำนักงาน">4. ครุภัณฑ์สำนักงาน</option>
+                    <option value="ครุภัณฑ์ยานพาหนะและขนส่ง">5. ครุภัณฑ์ยานพาหนะและขนส่ง</option>
+                    <option value="ครุภัณฑ์ไฟฟ้าและวิทยุ">6. ครุภัณฑ์ไฟฟ้าและวิทยุ</option>
+                    <option value="ครุภัณฑ์โฆษณาและเผยแพร่">7. ครุภัณฑ์โฆษณาและเผยแพร่</option>
+                    <option value="ครุภัณฑ์การเกษตร">8. ครุภัณฑ์การเกษตร</option>
+                    <option value="ครุภัณฑ์โรงงาน">9. ครุภัณฑ์โรงงาน</option>
+                    <option value="ครุภัณฑ์ก่อสร้าง">10. ครุภัณฑ์ก่อสร้าง</option>
+                    <option value="ครุภัณฑ์สำรวจ">11. ครุภัณฑ์สำรวจ</option>
+                    <option value="ครุภัณฑ์วิทยาศาสตร์และการแพทย์">12. ครุภัณฑ์วิทยาศาสตร์และการแพทย์</option>
+                    <option value="ครุภัณฑ์คอมพิวเตอร์">13. ครุภัณฑ์คอมพิวเตอร์</option>
+                    <option value="ครุภัณฑ์ดนตรี">14. ครุภัณฑ์ดนตรี</option>
+                    <option value="ครุภัณฑ์การศึกษา">15. ครุภัณฑ์การศึกษา</option>
+                    <option value="ครุภัณฑ์งานบ้านงานครัว">16. ครุภัณฑ์งานบ้านงานครัว</option>
+                    <option value="ครุภัณฑ์กีฬา">17. ครุภัณฑ์กีฬา</option>
+                    <option value="ครุภัณฑ์อาวุธ">18. ครุภัณฑ์อาวุธ</option>
+                    <option value="ครุภัณฑ์สนาม">19. ครุภัณฑ์สนาม</option>
+                    <option value="วัสดุ/ครุภัณฑ์ต่ำกว่าเกณฑ์">-- ต่ำกว่าเกณฑ์ (ไม่คิดค่าเสื่อม) --</option>
+                  </select>
+                </div>
+                <div class="col-md-2 mb-3 mb-md-0">
+                  <label class="form-label fw-bold mb-1"><i class="bi bi-calendar3 me-1"></i>ปีงบฯ</label>
+                  <select id="fiscalYearFilter" class="form-select bg-light" onchange="filterData()">
+                    <option value="">-- ทุกปี --</option>
+                  </select>
+                </div>
+                <div class="col-md-2 mb-3 mb-md-0">
+                  <label class="form-label fw-bold mb-1"><i class="bi bi-tag me-1"></i>สถานะ</label>
+                  <select id="statusFilter" class="form-select bg-light border-warning" onchange="filterData()">
+                    <option value="active" selected>🟢 ใช้งานปกติ</option>
+                    <option value="disposed">🔴 แทงจำหน่าย</option>
+                    <option value="all">ดูทั้งหมด</option>
+                  </select>
+                </div>
+                <div class="col-md-5 text-md-end">
+                  <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button class="btn btn-outline-danger" id="btnExportDocs" onclick="exportBatchDocs()"><i class="bi bi-file-earmark-word me-1"></i>โหลดทะเบียนคุม(Word)</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ตารางแสดงผล -->
+          <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+              
+              <div class="row mb-3 align-items-center">
+                <div class="col-md-6 col-sm-12 mb-3 mb-md-0">
+                  <div class="d-flex align-items-center text-muted" style="font-size: 0.9rem;">
+                    <span class="me-2">แสดง</span>
+                    <select class="form-select form-select-sm w-auto d-inline-block shadow-none" id="pageSize" onchange="changePageSize()">
+                      <option value="10">10</option>
+                      <option value="20">20</option>
+                      <option value="50">50</option>
+                      <option value="all">ทั้งหมด</option>
+                    </select>
+                    <span class="ms-2">รายการ ต่อหน้า</span>
+                  </div>
+                </div>
+                <div class="col-md-4 offset-md-2 col-sm-12">
+                  <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" id="searchInput" class="form-control border-start-0 ps-0 shadow-none" placeholder="ค้นหา ชื่อพัสดุ, รหัส, ผู้ขาย..." onkeyup="filterData()">
+                  </div>
+                </div>
+              </div>
+              
+              <div class="table-responsive border rounded">
+                <table class="table table-hover align-middle text-nowrap mb-0" style="font-size: 0.95rem;">
+                  <thead class="table-dark text-center">
+                    <tr>
+                      <th class="py-3">วันที่ได้มา</th>
+                      <th class="py-3">รหัสพัสดุ</th>
+                      <th class="py-3 text-start">รายการพัสดุ</th>
+                      <th class="py-3">หมวดหมู่</th>
+                      <th class="py-3 text-end">มูลค่ารวม (บาท)</th>
+                      <th class="py-3 text-end">ค่าเสื่อม/ปี (บาท)</th>
+                      <th class="py-3 text-end">ค่าเสื่อมสะสม (บาท)</th>
+                      <th class="py-3 text-end">มูลค่าสุทธิ (บาท)</th>
+                      <th class="py-3 text-center" id="colManageHeader">จัดการ</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dataTableBody"></tbody>
+                </table>
+              </div>
+              
+              <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mt-3" id="paginationContainer">
+                <div class="text-muted small mb-2 mb-md-0" id="pageInfo">แสดง 0 ถึง 0 จาก 0 รายการ</div>
+                <ul class="pagination pagination-sm mb-0 shadow-sm" id="pagination"></ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ⚙️ TAB: ตั้งค่าระบบ -->
+        <div class="tab-pane fade" id="settings-pane" role="tabpanel">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold mb-0 text-dark"><i class="bi bi-gear text-primary me-2"></i>ตั้งค่ารหัสพัสดุและเลขเอกสาร</h4>
+          </div>
+
+          <div class="row">
+            <div class="col-md-4 mb-4">
+              <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                  <h6 class="fw-bold text-primary"><i class="bi bi-plus-circle me-1"></i>เพิ่มรายการพัสดุใหม่</h6>
+                </div>
+                <div class="card-body">
+                  <form id="settingForm" onsubmit="handleSettingSubmit(event)">
+                    <div class="mb-3">
+                      <label class="form-label text-muted small fw-bold">หมวดหมู่พัสดุ</label>
+                      <select class="form-select" name="category" required>
+                        <option value="">-- เลือกหมวดหมู่ --</option>
+                        <option value="อาคารถาวร">1. อาคารถาวร</option>
+                        <option value="ครุภัณฑ์สำนักงาน">4. ครุภัณฑ์สำนักงาน</option>
+                        <option value="ครุภัณฑ์คอมพิวเตอร์">13. ครุภัณฑ์คอมพิวเตอร์</option>
+                        <option value="ครุภัณฑ์การศึกษา">15. ครุภัณฑ์การศึกษา</option>
+                      </select>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label text-muted small fw-bold">ลักษณะพัสดุ (ชื่อเรียก)</label>
+                      <input type="text" class="form-control" name="itemName" placeholder="เช่น โปรเจคเตอร์, คอมพิวเตอร์" required>
+                    </div>
+                    
+                    <hr class="border-secondary opacity-25">
+                    <p class="text-muted small fw-bold mb-2">ตั้งค่ารหัสพัสดุ (Asset Code)</p>
+                    <div class="row g-2 mb-3">
+                      <div class="col-4"><input type="text" class="form-control text-center" name="assetPart1" placeholder="ส่วนที่ 1" value="000" required></div>
+                      <div class="col-4"><input type="text" class="form-control text-center" name="assetPart2" placeholder="ส่วนที่ 2" value="000" required></div>
+                      <div class="col-4"><input type="number" class="form-control text-center text-primary fw-bold" name="currentAssetNum" placeholder="เริ่มที่" value="0" required></div>
+                    </div>
+
+                    <p class="text-muted small fw-bold mb-2">ตั้งค่าเลขเอกสาร (Document Ref.)</p>
+                    <div class="mb-4">
+                      <input type="number" class="form-control text-center text-primary fw-bold" name="currentDocNum" placeholder="เริ่มนับลำดับที่" value="0" required>
+                    </div>
+
+                    <div class="d-grid">
+                      <button type="submit" class="btn btn-primary" id="btnSaveSetting"><i class="bi bi-save me-2"></i>บันทึกการตั้งค่า</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-8 mb-4">
+              <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between">
+                  <h6 class="fw-bold text-dark"><i class="bi bi-table me-1"></i>ฐานข้อมูลรหัสและลำดับปัจจุบัน</h6>
+                  <button class="btn btn-sm btn-outline-secondary" onclick="loadSettings()"><i class="bi bi-arrow-clockwise"></i></button>
+                </div>
+                <div class="card-body p-3">
+                  <div class="table-responsive border rounded" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table table-hover table-sm text-nowrap mb-0" style="font-size: 0.85rem;">
+                      <thead class="table-dark text-center" style="position: sticky; top: 0; z-index: 1;">
+                        <tr>
+                          <th class="py-2">หมวดหมู่</th>
+                          <th class="py-2">ลักษณะพัสดุ</th>
+                          <th class="py-2">รูปแบบรหัส</th>
+                          <th class="py-2">ลำดับรหัสล่าสุด</th>
+                          <th class="py-2">ลำดับเอกสารล่าสุด</th>
+                        </tr>
+                      </thead>
+                      <tbody id="settingsTableBody">
+                        <tr><td colspan='5' class='text-center py-4 text-muted'>คลิกปุ่มรีเฟรชเพื่อดึงข้อมูล...</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 🔲 TAB: พิมพ์ QR Code -->
+        <div class="tab-pane fade" id="qrcode-pane" role="tabpanel">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold mb-0 text-dark"><i class="bi bi-qr-code-scan text-primary me-2"></i>ระบบจัดพิมพ์ QR Code พัสดุ (แบบกลุ่ม A4)</h4>
+          </div>
+          <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body p-4 text-center">
+              <div class="py-5">
+                <i class="bi bi-printer text-muted" style="font-size: 4rem;"></i>
+                <h5 class="mt-3 fw-bold">สั่งพิมพ์สติกเกอร์ QR Code</h5>
+                <p class="text-muted px-4">
+                  ระบบจะทำการสร้าง QR Code <strong class="text-primary">ตามข้อมูลที่แสดงอยู่ในตารางหน้า Dashboard ปัจจุบัน</strong><br>
+                  (หากคุณต้องการพิมพ์เฉพาะหมวดหมู่ใด ให้กลับไปเลือกตัวกรองที่หน้า Dashboard ก่อนกดปุ่มพิมพ์นี้)
+                </p>
+                <button class="btn btn-outline-dark mt-3 px-4 py-2" onclick="printQRCodeBatch()">
+                  <i class="bi bi-qr-code-scan me-2"></i>สร้างหน้าต่างพิมพ์สติกเกอร์ (A4)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 🔲 TAB: แทงจำหน่าย / ส่งซ่อม -->
+        <div class="tab-pane fade" id="dispose-pane" role="tabpanel">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold mb-0 text-dark"><i class="bi bi-arrow-left-right text-danger me-2"></i>จัดการสถานะ (แทงจำหน่าย / ส่งซ่อม)</h4>
+          </div>
+          <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body p-4 text-center">
+              <div class="py-5">
+                <i class="bi bi-box-seam text-muted" style="font-size: 4rem;"></i>
+                <h5 class="mt-3 fw-bold">เครื่องมือแทงจำหน่ายพัสดุ</h5>
+                <p class="text-muted px-4">
+                  เพื่อให้การตัดยอดและคำนวณเงินสะดวกที่สุด <br>กรุณากลับไปที่หน้า <b>"ทะเบียนคุม/ค่าเสื่อม"</b> และใช้ปุ่ม <i class="bi bi-box-arrow-right mx-1 text-secondary"></i> (แทงจำหน่าย) ที่คอลัมน์ "จัดการ" ท้ายตาราง
+                </p>
+                <button class="btn btn-primary mt-2" onclick="new bootstrap.Tab(document.querySelector('#dashboard-tab')).show();">
+                  <i class="bi bi-arrow-left-circle me-1"></i> กลับไปหน้าตารางทะเบียนคุม
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 🔲 TAB: รายงานตรวจนับประจำปี -->
+        <div class="tab-pane fade" id="report-pane" role="tabpanel">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold mb-0 text-dark"><i class="bi bi-file-earmark-text text-success me-2"></i>ออกรายงานตรวจนับทรัพย์สินประจำปี</h4>
+          </div>
+          <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body p-4">
+              <div class="row justify-content-center py-4">
+                <div class="col-md-6 text-center">
+                  <i class="bi bi-file-excel text-success mb-3" style="font-size: 4rem;"></i>
+                  <h5 class="fw-bold">สร้างไฟล์รายงานประจำปี (แยก 19 หมวดหมู่)</h5>
+                  <p class="text-muted mb-4">เลือกระบุปีงบประมาณที่ต้องการออกรายงาน ระบบจะดึงเฉพาะพัสดุที่ยังใช้งานปกติมาจัดเรียงลงแบบฟอร์ม</p>
+                  
+                  <div class="input-group mb-3 justify-content-center">
+                    <span class="input-group-text bg-white">เลือกปีงบประมาณ</span>
+                    <input type="number" id="reportYearInput" class="form-control" style="max-width: 150px;" placeholder="เช่น 2568" value="2568">
+                    <button class="btn btn-success" type="button" id="btnExportReport" onclick="exportSummaryReport()">
+                      <i class="bi bi-download me-1"></i> ดาวน์โหลดรายงาน Excel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- 📱 หน้าจอแสดงผลเมื่อสแกน QR Code (Scan View) -->
+    <div id="scan-view-pane" class="container mt-5" style="display: none; max-width: 600px;">
+      <div class="card shadow-lg border-0 rounded-4">
+        <div class="card-header bg-primary text-white text-center py-3 rounded-top-4">
+          <h5 class="mb-0"><i class="bi bi-search me-2"></i>ข้อมูลทะเบียนทรัพย์สิน</h5>
+          <small>โรงเรียนกุดดินจี่พิทยาคม</small>
+        </div>
+        <div class="card-body p-4" id="scanViewContent">
+          <!-- ข้อมูลพัสดุจะถูกนำมาแสดงตรงนี้ -->
+        </div>
+        <div class="card-footer bg-white text-center py-3 rounded-bottom-4 border-top-0">
+          <button class="btn btn-outline-primary" onclick="window.location.href = window.location.href.split('?')[0];">
+            <i class="bi bi-house-door me-2"></i>เข้าสู่ระบบจัดการหลัก
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ==========================================
+    const API_URL = "https://script.google.com/macros/s/AKfycbwdoLFJ262Wbj6vKVrgHSad_NdR2AUajraWtt6JG2ocfVHaizZZPdW8eBRLZsrv4S7Mvw/exec";
+    // ==========================================
+    
+    // ระบบตรวจสอบสถานะล็อกอิน
+    let isAdmin = sessionStorage.getItem("adminStatus") === "true";
+
+    function toggleLogin() {
+      if (isAdmin) {
+        if(confirm("ต้องการออกจากระบบผู้ดูแลหรือไม่?")) {
+          sessionStorage.setItem("adminStatus", "false");
+          alert("ออกจากระบบสำเร็จ! ตอนนี้คุณอยู่ในโหมดผู้เยี่ยมชม (อ่านได้อย่างเดียว)");
+          location.reload(); 
+        }
+      } else {
+        let pass = prompt("🔒 กรุณาใส่รหัสผ่านผู้ดูแลระบบ:");
+        if (pass === "112233") {
+          sessionStorage.setItem("adminStatus", "true");
+          alert("✅ เข้าสู่ระบบสำเร็จ! ปลดล็อกฟังก์ชันจัดการข้อมูลแล้ว");
+          location.reload();
+        } else if (pass !== null && pass !== "") {
+          alert("❌ รหัสผ่านไม่ถูกต้อง!");
+        }
+      }
+    }
+
+    let windowData = []; 
+
+    window.onload = function() { loadDashboard(); };
+
+    // ฟังก์ชันเปิดฟอร์มเพิ่มข้อมูลใหม่ (ล้างข้อมูลเก่า)
+    function openAddForm() {
+      const tabTrigger = document.querySelector('#form-tab');
+      if(tabTrigger) {
+        new bootstrap.Tab(tabTrigger).show();
+      }
+      document.getElementById('assetForm').reset();
+      document.getElementById('assetForm').sysId.value = '';
+      const btn = document.getElementById('submitBtn');
+      btn.innerHTML = '<i class="bi bi-save me-2"></i>บันทึกทะเบียนคุมทรัพย์สิน';
+      btn.classList.replace('btn-warning', 'btn-primary');
+    }
+
+    function loadDashboard() {
+      const tbody = document.getElementById('dataTableBody');
+      tbody.innerHTML = "<tr><td colspan='9' class='text-center text-primary py-5'><div class='spinner-border spinner-border-sm me-2' role='status'></div>กำลังโหลดข้อมูลพัสดุ...</td></tr>";
+      
+      const fetchUrl = API_URL + "?t=" + new Date().getTime();
+      
+      fetch(fetchUrl, { method: 'GET', redirect: 'follow' })
+      .then(async response => {
+        const rawText = await response.text(); 
+        try {
+          return JSON.parse(rawText); 
+        } catch (e) {
+          throw new Error("ข้อมูลตอบกลับผิดพลาด: " + rawText.substring(0, 150) + "...");
+        }
+      })
+      .then(data => {
+        if (data.error) {
+           tbody.innerHTML = `<tr><td colspan='9' class='text-center text-danger py-4'>⚠️ โค้ดหลังบ้านแจ้ง Error: ${data.error}</td></tr>`;
+           return;
+        }
+        windowData = data; 
+        updateFiscalYearDropdown();
+        filterData(); 
+        checkScanMode();
+      })
+      .catch(error => {
+        tbody.innerHTML = `<tr><td colspan='9' class='text-center text-danger py-4'>
+          <b><i class="bi bi-exclamation-triangle me-2"></i>เชื่อมต่อฐานข้อมูลล้มเหลว</b><br>
+          <small class="text-muted">${error.message}</small>
+        </td></tr>`;
+      });
+    }
+
+    let currentPage = 1;
+    let itemsPerPage = 10;
+    let currentFilteredData = [];
+
+    function filterData() {
+      const selectedCategory = document.getElementById('categoryFilter').value;
+      const selectedYear = document.getElementById('fiscalYearFilter').value;
+      const selectedStatus = document.getElementById('statusFilter').value;
+      const searchText = document.getElementById('searchInput') ? document.getElementById('searchInput').value.toLowerCase() : "";
+      
+      currentFilteredData = windowData;
+      
+      if (selectedCategory !== "all") {
+        currentFilteredData = currentFilteredData.filter(item => item.category === selectedCategory);
+      }
+      if (selectedYear !== "") {
+        currentFilteredData = currentFilteredData.filter(item => String(item.year) === String(selectedYear));
+      }
+      if (selectedStatus !== "all") {
+        if (selectedStatus === "disposed") {
+          currentFilteredData = currentFilteredData.filter(item => item.status && item.status.includes("จำหน่าย"));
+        } else if (selectedStatus === "active") {
+          currentFilteredData = currentFilteredData.filter(item => !item.status || !item.status.includes("จำหน่าย"));
+        }
+      }
+      if (searchText !== "") {
+        currentFilteredData = currentFilteredData.filter(item => {
+          return ((item.name && item.name.toLowerCase().includes(searchText)) ||
+                  (item.assetCode && item.assetCode.toLowerCase().includes(searchText)) ||
+                  (item.vendor && item.vendor.toLowerCase().includes(searchText)) ||
+                  (item.docRef && item.docRef.toLowerCase().includes(searchText)));
+        });
+      }
+
+      currentPage = 1; 
+      updateSummaryCards(currentFilteredData); 
+      renderTablePage(); 
+    }
+
+    function changePageSize() {
+      const val = document.getElementById('pageSize').value;
+      itemsPerPage = val === "all" ? currentFilteredData.length : parseInt(val);
+      currentPage = 1;
+      renderTablePage();
+    }
+
+    function updateSummaryCards(data) {
+      let sumTotal = 0, sumNet = 0;
+      data.forEach(item => {
+        sumTotal += item.total || 0;
+        sumNet += item.netValue || 0;
+      });
+      document.getElementById('sumCount').innerText = data.length;
+      document.getElementById('sumTotal').innerText = sumTotal.toLocaleString('th-TH', {minimumFractionDigits: 2});
+      document.getElementById('sumNet').innerText = sumNet.toLocaleString('th-TH', {minimumFractionDigits: 2});
+    }
+
+    function renderTablePage() {
+      const tbody = document.getElementById('dataTableBody');
+      const thead = document.querySelector('thead tr');
+      
+      let manageHeader = document.getElementById('colManageHeader');
+      if (!manageHeader) {
+        let th = document.createElement('th');
+        th.id = 'colManageHeader';
+        th.className = 'text-center py-3';
+        th.innerText = 'จัดการ';
+        thead.appendChild(th);
+        manageHeader = th;
+      }
+      manageHeader.style.display = isAdmin ? 'table-cell' : 'none';
+
+      // จัดการเมนูอื่นๆ ในหน้าเว็บตามสถานะ Login
+      if(document.getElementById('menuAddAssetLi')) document.getElementById('menuAddAssetLi').style.display = isAdmin ? 'block' : 'none';
+      if(document.getElementById('btnAddAsset')) document.getElementById('btnAddAsset').style.display = isAdmin ? 'inline-block' : 'none';
+      if(document.getElementById('extensionTabs')) document.getElementById('extensionTabs').style.display = isAdmin ? 'flex' : 'none';
+      if(document.getElementById('extensionHeader')) document.getElementById('extensionHeader').style.display = isAdmin ? 'block' : 'none';
+      
+      const btnLoginBtn = document.getElementById('btnLoginBtn');
+      if (isAdmin) {
+        btnLoginBtn.innerHTML = '<i class="bi bi-unlock-fill me-1"></i>ออกจากระบบ';
+        btnLoginBtn.className = 'btn btn-sm btn-outline-danger w-100 fw-bold';
+      } else {
+        btnLoginBtn.innerHTML = '<i class="bi bi-lock-fill me-1"></i>เข้าสู่ระบบผู้ดูแล';
+        btnLoginBtn.className = 'btn btn-sm btn-outline-primary w-100 fw-bold';
+      }
+
+      if (currentFilteredData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${isAdmin ? 9 : 8}" class='text-center text-muted py-5'>ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>`;
+        if(document.getElementById('pageInfo')) document.getElementById('pageInfo').innerText = "แสดง 0 ถึง 0 จาก 0 รายการ";
+        if(document.getElementById('pagination')) document.getElementById('pagination').innerHTML = "";
+        return;
+      }
+
+      let startIndex = (currentPage - 1) * itemsPerPage;
+      let endIndex = startIndex + itemsPerPage;
+      if (endIndex > currentFilteredData.length) endIndex = currentFilteredData.length;
+      let pageData = currentFilteredData.slice(startIndex, endIndex);
+
+      let html = "";
+      pageData.forEach(item => {
+        let isDisposed = item.status && item.status.includes("จำหน่าย");
+        let rowStyle = isDisposed ? "background-color: #f8f9fa; opacity: 0.7;" : "";
+        let nameHtml = isDisposed ? `<span class="text-decoration-line-through text-muted">${item.name}</span><br><span class="badge bg-danger mt-1">แทงจำหน่ายแล้ว</span>` : `<strong>${item.name}</strong>`;
+        let badge = item.isDepreciable === "คิด" ? "bg-warning text-dark" : "bg-secondary";
+        
+        let actionColumn = "";
+        if (isAdmin) {
+          let toggleBtn = isDisposed 
+            ? `<button class="btn btn-sm btn-outline-success me-1 mb-1" onclick="updateAssetStatus('${item.sysId}', 'ใช้งานปกติ')" title="ยกเลิกการจำหน่าย"><i class="bi bi-arrow-counterclockwise"></i></button>`
+            : `<button class="btn btn-sm btn-outline-secondary me-1 mb-1" onclick="updateAssetStatus('${item.sysId}', 'จำหน่าย/ทำลาย')" title="แทงจำหน่าย"><i class="bi bi-box-arrow-right"></i></button>`;
+
+          actionColumn = `
+            <td class="text-center">
+              ${toggleBtn}
+              <button class="btn btn-sm btn-outline-info me-1 mb-1" onclick="exportSingleDoc('${item.sysId}', this)" title="พิมพ์ทะเบียนคุม"><i class="bi bi-printer"></i></button>
+              <button class="btn btn-sm btn-outline-dark me-1 mb-1" onclick="printQRCodeSingle('${item.sysId}')" title="พิมพ์ QR Code"><i class="bi bi-qr-code"></i></button>
+              <button class="btn btn-sm btn-outline-warning text-dark me-1 mb-1" onclick="editAsset('${item.sysId}')" title="แก้ไข"><i class="bi bi-pencil"></i></button>
+              <button class="btn btn-sm btn-outline-danger mb-1" onclick="deleteAsset('${item.sysId}', '${item.name}')" title="ลบ"><i class="bi bi-trash3"></i></button>
+            </td>
+          `;
+        }
+
+        html += `<tr style="${rowStyle}">
+          <td class="text-center text-muted">${item.dateStr}</td>
+          <td class="text-center"><span class="badge bg-light text-dark border">${item.assetCode || '-'}</span></td>
+          <td>${nameHtml}</td>
+          <td class="text-center text-secondary" style="font-size: 0.85rem;">${item.category}</td>
+          <td class="text-end">${item.totalStr}</td>
+          <td class="text-end text-secondary">${item.isDepreciable === "คิด" ? item.yearlyDepStr : "-"}</td>
+          <td class="text-end"><span class="badge ${badge}">${item.isDepreciable === "คิด" ? item.accDepStr : "-"}</span></td>
+          <td class="text-end fw-bold ${isDisposed ? 'text-muted' : 'text-primary'}">${item.netValueStr}</td>
+          ${actionColumn}
+        </tr>`;
+      });
+      
+      tbody.innerHTML = html;
+      
+      if(document.getElementById('pageInfo')) document.getElementById('pageInfo').innerText = `แสดง ${startIndex + 1} ถึง ${endIndex} จาก ${currentFilteredData.length} รายการ`;
+      if(typeof renderPagination === "function") renderPagination(currentFilteredData.length);
+    }
+    
+    function updateAssetStatus(sysId, newStatus) {
+      let msg = newStatus.includes("จำหน่าย") 
+        ? `⚠️ ยืนยันการ "แทงจำหน่าย/ทำลาย" พัสดุชิ้นนี้ใช่หรือไม่?\n\n(หากจำหน่ายแล้ว ระบบจะหักมูลค่าออกจากยอดรวม)`
+        : `🔄 ยืนยันการ "ยกเลิกการจำหน่าย" (นำพัสดุกลับมาใช้งานปกติ) ใช่หรือไม่?`;
+        
+      if(!confirm(msg)) return;
+      
+      fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'updateStatus', sysId: sysId, status: newStatus })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if(data.status === 'success') {
+          loadDashboard(); 
+        } else {
+          alert("❌ เกิดข้อผิดพลาด: " + data.message);
+        }
+      })
+      .catch(error => alert("❌ การเชื่อมต่อผิดพลาด: " + error));
+    }
+
+    function renderPagination(totalItems) {
+      const totalPages = Math.ceil(totalItems / itemsPerPage);
+      const ul = document.getElementById('pagination');
+      let html = "";
+      
+      if (totalPages <= 1) {
+        ul.innerHTML = "";
+        return;
+      }
+
+      html += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}"><a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">&laquo;</a></li>`;
+               
+      let startPage = Math.max(1, currentPage - 2);
+      let endPage = Math.min(totalPages, currentPage + 2);
+      
+      if (startPage > 1) {
+         html += `<li class="page-item"><a class="page-link" href="#" onclick="changePage(1); return false;">1</a></li>`;
+         if (startPage > 2) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        html += `<li class="page-item ${currentPage === i ? 'active' : ''}"><a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a></li>`;
+      }
+      
+      if (endPage < totalPages) {
+         if (endPage < totalPages - 1) html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+         html += `<li class="page-item"><a class="page-link" href="#" onclick="changePage(${totalPages}); return false;">${totalPages}</a></li>`;
+      }
+
+      html += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}"><a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">&raquo;</a></li>`;
+      ul.innerHTML = html;
+    }
+
+    function changePage(page) {
+      currentPage = page;
+      renderTablePage();
+    }
+
+    function exportBatchDocs() {
+      const selectedCategory = document.getElementById('categoryFilter').value;
+      if (selectedCategory === "all" || selectedCategory === "") {
+        alert("กรุณาเลือกหมวดหมู่ที่ต้องการดาวน์โหลดให้ชัดเจน (เช่น ครุภัณฑ์คอมพิวเตอร์) ระบบไม่สามารถดึงข้อมูลรวมทุกประเภทในครั้งเดียวได้ครับ");
+        return;
+      }
+      
+      const btn = document.getElementById('btnExportDocs');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = "<span class='spinner-border spinner-border-sm me-2'></span>กำลังสร้างเอกสาร...";
+      btn.disabled = true;
+
+      const payload = { action: 'exportBatch', category: selectedCategory, fiscalYear: document.getElementById('fiscalYearFilter').value };
+
+      fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if(data.status === 'success') {
+          alert("✅ สร้างเอกสารสำเร็จ! ไฟล์ถูกจัดเก็บใน Google Drive เรียบร้อยแล้ว");
+          if(data.folderUrl) window.open(data.folderUrl, "_blank");
+        } else {
+          alert("❌ เกิดข้อผิดพลาดจากระบบ: " + data.message);
+        }
+      })
+      .catch(error => alert("❌ การเชื่อมต่อผิดพลาด: " + error))
+      .finally(() => { 
+        btn.innerHTML = originalText;
+        btn.disabled = false; 
+      });
+    }
+
+    function exportSummaryReport() {
+      const selectedYear = document.getElementById('reportYearInput').value;
+      if (!selectedYear) {
+        alert("กรุณาระบุ 'ปีงบประมาณ' ก่อนเพื่อสร้างรายงานครับ");
+        document.getElementById('reportYearInput').focus();
+        return;
+      }
+      
+      const btn = document.getElementById('btnExportReport');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = "<span class='spinner-border spinner-border-sm me-2'></span>กำลังสร้างรายงาน...";
+      btn.disabled = true;
+
+      fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        redirect: 'follow',
+        body: JSON.stringify({ action: 'exportAnnualReport', fiscalYear: selectedYear }) 
+      })
+      .then(response => response.json())
+      .then(data => {
+        if(data.status === 'success') {
+          const div = document.createElement('div');
+          div.innerHTML = `
+            <div class="alert alert-success alert-dismissible fade show mt-2 shadow" role="alert" style="position:fixed; top:20px; right:20px; z-index:9999;">
+              <strong><i class="bi bi-check-circle-fill me-2"></i>สร้างรายงานตรวจนับประจำปี ${selectedYear} สำเร็จ!</strong><br><br>
+              <a href="${data.pdfUrl}" class="btn btn-danger btn-sm me-2" target="_blank"><i class="bi bi-file-pdf me-1"></i>ดาวน์โหลด PDF</a>
+              <a href="${data.xlsxUrl}" class="btn btn-success btn-sm" target="_blank"><i class="bi bi-file-excel me-1"></i>ดาวน์โหลด Excel</a>
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          `;
+          document.body.appendChild(div);
+        } else {
+          alert("❌ เกิดข้อผิดพลาด: " + data.message);
+        }
+      })
+      .catch(error => alert("❌ การเชื่อมต่อผิดพลาด: " + error))
+      .finally(() => { 
+        btn.innerHTML = originalText; 
+        btn.disabled = false; 
+      });
+    }
+    
+    async function handleFormSubmit(event) {
+      event.preventDefault();
+      const form = event.target;
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+      
+      data.action = data.sysId ? 'edit' : 'save';
+      
+      const btn = document.getElementById('submitBtn');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = "<span class='spinner-border spinner-border-sm me-2'></span>กำลังอัปโหลดและบันทึกข้อมูล...";
+      btn.disabled = true;
+
+      const fileInput = document.getElementById('assetImage');
+      if (fileInput && fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const base64 = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.readAsDataURL(file);
+        });
+        data.fileData = base64;
+        data.fileName = file.name;
+        data.mimeType = file.type;
+      }
+
+      fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        redirect: 'follow',
+        body: JSON.stringify(data)
+      })
+      .then(response => response.json())
+      .then(resData => {
+        if(resData.status === 'success') {
+          alert("✅ " + resData.message);
+          form.reset();
+          form.sysId.value = ""; 
+          btn.innerHTML = '<i class="bi bi-save me-2"></i>บันทึกทะเบียนคุมทรัพย์สิน';
+          btn.classList.replace('btn-warning', 'btn-primary');
+          loadDashboard(); 
+        } else {
+          alert("❌ เกิดข้อผิดพลาด: " + resData.message);
+        }
+      })
+      .catch(error => alert("❌ การเชื่อมต่อผิดพลาด: " + error))
+      .finally(() => { 
+        btn.disabled = false; 
+        if(!data.sysId) btn.innerHTML = '<i class="bi bi-save me-2"></i>บันทึกทะเบียนคุมทรัพย์สิน'; 
+      });
+    }
+
+    function deleteAsset(sysId, itemName) {
+      if(!confirm(`⚠️ คุณแน่ใจหรือไม่ว่าต้องการลบพัสดุรายการ:\n"${itemName}" ?\n\n(หากลบแล้วข้อมูลจะหายไปจากระบบทันที)`)) return; 
+      
+      fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        redirect: 'follow',
+        body: JSON.stringify({ action: 'delete', sysId: sysId })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if(data.status === 'success') {
+          alert("✅ ลบข้อมูลออกจากระบบเรียบร้อยแล้ว");
+          loadDashboard(); 
+        } else {
+          alert("❌ เกิดข้อผิดพลาดจากระบบ: " + data.message);
+        }
+      })
+      .catch(error => alert("❌ การเชื่อมต่อผิดพลาด: " + error));
+    }
+
+    function editAsset(sysId) {
+      const item = windowData.find(d => d.sysId === sysId);
+      if(!item) return;
+      
+      const form = document.getElementById('assetForm');
+      form.sysId.value = item.sysId;
+      form.fiscalYear.value = item.year;
+      form.moneyType.value = item.moneyType;
+      form.method.value = item.method;
+      form.itemName.value = item.name;
+      form.assetCode.value = item.assetCode;
+      form.model.value = item.model;
+      form.category.value = item.category;
+      form.price.value = item.price;
+      form.quantity.value = item.qty;
+      form.unit.value = item.unit;
+      form.vendor.value = item.vendor;
+      form.address.value = item.address;
+      form.phone.value = item.phone;
+      form.docRef.value = item.docRef;
+      form.location.value = item.location;
+      form.remark.value = item.remark;
+
+      let d = new Date(item.date);
+      if(!isNaN(d)) form.acquireDate.value = d.toISOString().split('T')[0];
+
+      const btn = document.getElementById('submitBtn');
+      btn.innerHTML = '<i class="bi bi-pencil-square me-2"></i>บันทึกการแก้ไข';
+      btn.classList.replace('btn-primary', 'btn-warning');
+
+      const tabTrigger = document.querySelector('#form-tab');
+      if(tabTrigger) new bootstrap.Tab(tabTrigger).show();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function updateFiscalYearDropdown() {
+      const select = document.getElementById('fiscalYearFilter');
+      if (!select) return;
+      
+      const currentVal = select.value; 
+      const years = [...new Set(windowData.map(item => item.year))].filter(y => y);
+      years.sort((a, b) => b - a);
+      
+      let html = '<option value="">-- ทุกปีงบประมาณ --</option>';
+      years.forEach(year => { html += `<option value="${year}">${year}</option>`; });
+      
+      select.innerHTML = html;
+      if (currentVal) select.value = currentVal;
+    }
+
+    function loadSettings() {
+      const tbody = document.getElementById('settingsTableBody');
+      tbody.innerHTML = "<tr><td colspan='5' class='text-center text-primary py-4'><span class='spinner-border spinner-border-sm me-2'></span>กำลังโหลดข้อมูล...</td></tr>";
+      
+      fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'getSettings' })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if(data.status === 'success') {
+          if(data.data.length === 0) {
+            tbody.innerHTML = "<tr><td colspan='5' class='text-center text-muted py-4'>ยังไม่มีข้อมูลการตั้งค่าในระบบ</td></tr>";
+            return;
+          }
+          let html = "";
+          data.data.forEach(item => {
+            html += `<tr>
+              <td class="text-secondary">${item.category}</td>
+              <td class="fw-bold">${item.name}</td>
+              <td class="text-center"><span class="badge bg-light text-dark border">${item.assetPart1} / ${item.assetPart2}</span></td>
+              <td class="text-center fw-bold text-primary">${item.currentAssetNum}</td>
+              <td class="text-center fw-bold text-success">${item.currentDocNum}</td>
+            </tr>`;
+          });
+          tbody.innerHTML = html;
+        } else {
+          tbody.innerHTML = `<tr><td colspan='5' class='text-center text-danger'>❌ Error: ${data.message}</td></tr>`;
+        }
+      })
+      .catch(error => { tbody.innerHTML = `<tr><td colspan='5' class='text-center text-danger'>❌ การเชื่อมต่อผิดพลาด</td></tr>`; });
+    }
+
+    function handleSettingSubmit(event) {
+      event.preventDefault();
+      const form = event.target;
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+      data.action = 'saveSetting';
+      
+      const btn = document.getElementById('btnSaveSetting');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = "<span class='spinner-border spinner-border-sm me-2'></span>กำลังตรวจสอบและบันทึก...";
+      btn.disabled = true;
+
+      fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(data)
+      })
+      .then(response => response.json())
+      .then(resData => {
+        if(resData.status === 'success') {
+          alert("✅ " + resData.message);
+          form.reset();
+          form.assetPart1.value = "000";
+          form.assetPart2.value = "000";
+          form.currentAssetNum.value = "0";
+          form.currentDocNum.value = "0";
+          loadSettings(); 
+        } else if (resData.status === 'error') {
+          alert("⚠️ " + resData.message);
+        }
+      })
+      .catch(error => alert("❌ การเชื่อมต่อผิดพลาด: " + error))
+      .finally(() => { 
+        btn.innerHTML = originalText;
+        btn.disabled = false; 
+      });
+    }
+
+    function exportSingleDoc(sysId, btnElement) {
+      const originalHtml = btnElement.innerHTML;
+      btnElement.innerHTML = "<span class='spinner-border spinner-border-sm'></span>";
+      btnElement.disabled = true;
+
+      fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'exportSingle', sysId: sysId })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if(data.status === 'success') {
+          window.open(data.docUrl, "_blank");
+        } else {
+          alert("❌ เกิดข้อผิดพลาด: " + data.message);
+        }
+      })
+      .catch(error => alert("❌ การเชื่อมต่อผิดพลาด: " + error))
+      .finally(() => { 
+        btnElement.innerHTML = originalHtml;
+        btnElement.disabled = false; 
+      });
+    }
+
+    function checkScanMode() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const scanId = urlParams.get('sysId');
+      
+      if (scanId && windowData.length > 0) {
+        document.querySelector('.app-container').style.display = 'none';
+        const item = windowData.find(d => d.sysId === scanId);
+        const scanPane = document.getElementById('scan-view-pane');
+        const content = document.getElementById('scanViewContent');
+        
+        if (item) {
+          let badge = item.status && item.status.includes("จำหน่าย") ? '<span class="badge bg-danger fs-6">🔴 แทงจำหน่ายแล้ว</span>' : '<span class="badge bg-success fs-6">🟢 ใช้งานปกติ</span>';
+          let imgHtml = item.imageUrl ? `<img src="${item.imageUrl}" class="img-fluid rounded mb-3 shadow-sm" style="max-height: 250px; object-fit: cover;">` : `<div class="bg-light p-4 rounded mb-3 text-center text-muted"><i class="bi bi-image" style="font-size: 3rem;"></i><br>ไม่มีรูปภาพ</div>`;
+          
+          content.innerHTML = `
+            <div class="text-center">${imgHtml}</div>
+            <h4 class="fw-bold text-center mb-3">${item.name}</h4>
+            <div class="text-center mb-4">${badge}</div>
+            <table class="table table-bordered table-sm fs-6">
+              <tr><td class="bg-light fw-bold" width="35%">รหัสพัสดุ</td><td>${item.assetCode || '-'}</td></tr>
+              <tr><td class="bg-light fw-bold">หมวดหมู่</td><td>${item.category}</td></tr>
+              <tr><td class="bg-light fw-bold">วันที่ได้มา</td><td>${item.dateStr}</td></tr>
+              <tr><td class="bg-light fw-bold">สถานที่ตั้ง</td><td>${item.location || '-'}</td></tr>
+              <tr><td class="bg-light fw-bold">ผู้ขาย/บริษัท</td><td>${item.vendor || '-'}</td></tr>
+              <tr><td class="bg-light fw-bold">มูลค่าได้มา</td><td class="text-primary fw-bold">${item.totalStr} บาท</td></tr>
+              <tr><td class="bg-light fw-bold">มูลค่าสุทธิปัจจุบัน</td><td class="text-success fw-bold">${item.netValueStr} บาท</td></tr>
+            </table>
+          `;
+        } else {
+          content.innerHTML = `<div class="text-center py-5 text-danger"><i class="bi bi-exclamation-triangle-fill fs-1"></i><h5 class="mt-3">ไม่พบข้อมูลพัสดุในระบบ</h5></div>`;
+        }
+        scanPane.style.display = 'block';
+      }
+    }
+
+    function generatePrintWindow(items) {
+      let printWin = window.open('', '_blank');
+      let baseUrl = window.location.href.split('?')[0]; 
+
+      let html = `
+        <html><head><title>พิมพ์ QR Code พัสดุ</title>
+        <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+        <style>
+          @page { size: A4; margin: 10mm; }
+          body { font-family: 'Sarabun', sans-serif; margin: 0; padding: 0; background: #fff; }
+          .sticker-sheet { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+          .sticker { border: 1px dashed #999; padding: 10px; text-align: center; border-radius: 6px; page-break-inside: avoid; }
+          .sticker img { width: 90px; height: 90px; margin-bottom: 5px; }
+          .school { font-size: 11px; font-weight: bold; margin: 0 0 5px 0; color: #333; }
+          .code { font-size: 11px; font-weight: bold; color: #000; margin: 0; }
+          .name { font-size: 10px; margin: 2px 0 0 0; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        </style>
+        </head><body><div class="sticker-sheet">
+      `;
+
+      items.forEach(item => {
+        let qr = new QRious({ value: baseUrl + "?sysId=" + item.sysId, size: 200, level: 'M' });
+        html += `
+          <div class="sticker">
+            <p class="school">โรงเรียนกุดดินจี่พิทยาคม</p>
+            <img src="${qr.toDataURL()}" />
+            <p class="code">รหัส: ${item.assetCode || '-'}</p>
+            <p class="name">${item.name}</p>
+          </div>
+        `;
+      });
+
+      html += `</div><script>window.onload = function() { window.print(); }<\/script></body></html>`;
+      printWin.document.open();
+      printWin.document.write(html);
+      printWin.document.close();
+    }
+
+    function printQRCodeBatch() {
+      if (!currentFilteredData || currentFilteredData.length === 0) {
+        alert("ไม่มีรายการพัสดุให้พิมพ์ กรุณาเลือกข้อมูลที่หน้าทะเบียนคุมก่อนครับ");
+        return;
+      }
+      generatePrintWindow(currentFilteredData);
+    }
+
+    function printQRCodeSingle(sysId) {
+      let item = windowData.find(d => d.sysId === sysId);
+      if(item) generatePrintWindow([item]);
+    }
+  </script>
+</body>
+</html>
