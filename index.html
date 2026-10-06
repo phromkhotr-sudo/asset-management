@@ -564,7 +564,6 @@
 
   </div>
 
-  ---------
 <!-- 🔐 Login Modal (Pop-up เข้าสู่ระบบ) -->
     <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-sm">
@@ -590,7 +589,7 @@
         </div>
       </div>
     </div>
-  ---------
+
 
   <script>
     // ==========================================
@@ -599,13 +598,14 @@
     
     let windowData = []; 
     window.onload = function() { 
-      // 1. เช็คว่าเปิดมาจากการสแกน QR Code หรือไม่
       const urlParams = new URLSearchParams(window.location.search);
       const scanId = urlParams.get('sysId');
       
       if (scanId) {
-        // 2. ถ้าใช่ ให้ซ่อนหน้าตารางหลัก แล้วโชว์หน้าการ์ดมือถือ พร้อมวงแหวนโหลดทันที!
-        document.querySelector('.app-container').style.display = 'none';
+        // เปลี่ยนมาซ่อนเฉพาะ Sidebar กับ Main Content
+        document.querySelector('.sidebar').style.display = 'none';
+        document.querySelector('.main-content').style.display = 'none';
+        
         document.getElementById('scan-view-pane').style.display = 'block';
         document.getElementById('scanViewContent').innerHTML = `
           <div class="text-center py-5">
@@ -616,7 +616,6 @@
         `;
       }
       
-      // 3. สั่งโหลดข้อมูลจากหลังบ้านตามปกติ
       loadDashboard(); 
     };
 
@@ -1237,10 +1236,14 @@
       const scanId = urlParams.get('sysId');
       
       if (scanId && windowData.length > 0) {
-        document.querySelector('.app-container').style.display = 'none';
+        // แก้ไข 2 บรรทัดนี้
+        document.querySelector('.sidebar').style.display = 'none';
+        document.querySelector('.main-content').style.display = 'none';
+        
         const item = windowData.find(d => d.sysId === scanId);
         const scanPane = document.getElementById('scan-view-pane');
         const content = document.getElementById('scanViewContent');
+        // ... (โค้ดส่วนที่เหลือด้านล่างปล่อยไว้เหมือนเดิมครับ)
         
         if (item) {
           let badge = item.status && item.status.includes("จำหน่าย") ? '<span class="badge bg-danger fs-6">🔴 แทงจำหน่ายแล้ว</span>' : '<span class="badge bg-success fs-6">🟢 ใช้งานปกติ</span>';
