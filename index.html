@@ -564,6 +564,34 @@
 
   </div>
 
+  ---------
+<!-- 🔐 Login Modal (Pop-up เข้าสู่ระบบ) -->
+    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+          <div class="modal-header border-0 pb-0 justify-content-center mt-4">
+            <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 65px; height: 65px;">
+              <i class="bi bi-shield-lock-fill fs-1"></i>
+            </div>
+          </div>
+          <div class="modal-body text-center px-4 pt-3 pb-4">
+            <h5 class="fw-bold mb-2 text-dark" id="loginModalLabel">เข้าสู่ระบบผู้ดูแล</h5>
+            <p class="text-muted small mb-4">กรุณายืนยันรหัสผ่านเพื่อจัดการข้อมูล</p>
+            <form id="loginForm" onsubmit="handleLoginSubmit(event)">
+              <div class="mb-3">
+                <input type="password" class="form-control form-control-lg text-center shadow-none bg-light" id="adminPassword" placeholder="••••••••" required>
+              </div>
+              <div id="loginError" class="text-danger small mb-3 fw-bold d-none">รหัสผ่านไม่ถูกต้อง!</div>
+              <button type="submit" class="btn btn-primary w-100 fw-bold py-2 rounded-3" id="btnLoginSubmit">
+                <i class="bi bi-box-arrow-in-right me-2"></i>เข้าสู่ระบบ
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  ---------
+
   <script>
     // ==========================================
     const API_URL = "https://script.google.com/macros/s/AKfycbwdoLFJ262Wbj6vKVrgHSad_NdR2AUajraWtt6JG2ocfVHaizZZPdW8eBRLZsrv4S7Mvw/exec";
@@ -572,28 +600,67 @@
     // ระบบตรวจสอบสถานะล็อกอิน
     let isAdmin = sessionStorage.getItem("adminStatus") === "true";
 
+    // 1. ฟังก์ชันเปิด Pop-up หรือ กดออกจากระบบ
     function toggleLogin() {
       if (isAdmin) {
         if(confirm("ต้องการออกจากระบบผู้ดูแลหรือไม่?")) {
           sessionStorage.setItem("adminStatus", "false");
-          alert("ออกจากระบบสำเร็จ! ตอนนี้คุณอยู่ในโหมดผู้เยี่ยมชม (อ่านได้อย่างเดียว)");
+          alert("ออกจากระบบสำเร็จ! ตอนนี้คุณอยู่ในโหมดผู้เยี่ยมชม");
           location.reload(); 
         }
       } else {
-        let pass = prompt("🔒 กรุณาใส่รหัสผ่านผู้ดูแลระบบ:");
-        if (pass === "112233") {
-          sessionStorage.setItem("adminStatus", "true");
-          alert("✅ เข้าสู่ระบบสำเร็จ! ปลดล็อกฟังก์ชันจัดการข้อมูลแล้ว");
-          location.reload();
-        } else if (pass !== null && pass !== "") {
-          alert("❌ รหัสผ่านไม่ถูกต้อง!");
-        }
+        // เคลียร์ช่องรหัสและข้อความแจ้งเตือนให้ว่างเปล่า
+        document.getElementById('adminPassword').value = '';
+        document.getElementById('loginError').classList.add('d-none');
+        // สั่งเปิด Pop-up สวยๆ
+        new bootstrap.Modal(document.getElementById('loginModal')).show();
+        // ให้เคอร์เซอร์กระพริบรอพิมพ์รหัสทันที
+        setTimeout(() => document.getElementById('adminPassword').focus(), 500);
       }
     }
 
-    let windowData = []; 
+    // 2. ฟังก์ชันส่งรหัสผ่านไปเช็คที่ Server (ทำงานเมื่อกดปุ่มเข้าสู่ระบบใน Pop-up)
+    function handleLoginSubmit(event) {
+      event.preventDefault();
+      const pass = document.getElementById('adminPassword').value;
+      const btn = document.getElementById('btnLoginSubmit');
+      const errorDiv = document.getElementById('loginError');
+      
+      // เปลี่ยนปุ่มเป็นสถานะหมุนโหลด
+      const originalHtml = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>ตรวจสอบ...';
+      btn.disabled = true;
+      errorDiv.classList.add('d-none');
 
-    window.onload = function() { loadDashboard(); };
+      // ส่งรหัสไปถาม Server (Code.gs)
+      fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'login', password: pass })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if(data.status === 'success') {
+          // ถ้ารหัสถูก บันทึกสิทธิ์และรีเฟรชเว็บ
+          sessionStorage.setItem("adminStatus", "true");
+          location.reload();
+        } else {
+          // ถ้ารหัสผิด โชว์ตัวแดงและให้พิมพ์ใหม่
+          errorDiv.innerText = data.message || "รหัสผ่านไม่ถูกต้อง!";
+          errorDiv.classList.remove('d-none');
+          document.getElementById('adminPassword').value = '';
+          document.getElementById('adminPassword').focus();
+        }
+      })
+      .catch(error => {
+        errorDiv.innerText = "การเชื่อมต่อผิดพลาด";
+        errorDiv.classList.remove('d-none');
+      })
+      .finally(() => {
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+      });
+    }
 
     // ฟังก์ชันเปิดฟอร์มเพิ่มข้อมูลใหม่ (ล้างข้อมูลเก่า)
     function openAddForm() {
@@ -1179,7 +1246,7 @@
 
     function generatePrintWindow(items) {
       let printWin = window.open('', '_blank');
-      let baseUrl = "https://phromkhotr-sudo.github.io/asset-management/"; 
+      let baseUrl = window.location.href.split('?')[0]; 
 
       let html = `
         <html><head><title>พิมพ์ QR Code พัสดุ</title>
