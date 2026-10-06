@@ -597,6 +597,9 @@
     const API_URL = "https://script.google.com/macros/s/AKfycbyv1wUk-Ta-sqnzE5U339LWt70VT3i4QJ3AM8O5JiosQAVSE0SeX3pBHzo4PswuWJiZYw/exec";
     // ==========================================
     
+    let windowData = []; 
+    window.onload = function() { loadDashboard(); };
+
     // ระบบตรวจสอบสถานะล็อกอิน
     let isAdmin = sessionStorage.getItem("adminStatus") === "true";
 
