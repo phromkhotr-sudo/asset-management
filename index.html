@@ -598,7 +598,27 @@
     // ==========================================
     
     let windowData = []; 
-    window.onload = function() { loadDashboard(); };
+    window.onload = function() { 
+      // 1. เช็คว่าเปิดมาจากการสแกน QR Code หรือไม่
+      const urlParams = new URLSearchParams(window.location.search);
+      const scanId = urlParams.get('sysId');
+      
+      if (scanId) {
+        // 2. ถ้าใช่ ให้ซ่อนหน้าตารางหลัก แล้วโชว์หน้าการ์ดมือถือ พร้อมวงแหวนโหลดทันที!
+        document.querySelector('.app-container').style.display = 'none';
+        document.getElementById('scan-view-pane').style.display = 'block';
+        document.getElementById('scanViewContent').innerHTML = `
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+            <h5 class="fw-bold text-dark">กำลังตรวจสอบฐานข้อมูล...</h5>
+            <small class="text-muted">กรุณารอสักครู่ (ใช้เวลาประมาณ 2-3 วินาที)</small>
+          </div>
+        `;
+      }
+      
+      // 3. สั่งโหลดข้อมูลจากหลังบ้านตามปกติ
+      loadDashboard(); 
+    };
 
     // ระบบตรวจสอบสถานะล็อกอิน
     let isAdmin = sessionStorage.getItem("adminStatus") === "true";
